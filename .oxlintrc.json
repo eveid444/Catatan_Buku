@@ -5,7 +5,6 @@
     "typescript/no-floating-promises": "error"
   },
   "env": {
-    "node": true,
-    "forbidNonWhitelisted": true
-  }
+    "node": true
+    }
 }
