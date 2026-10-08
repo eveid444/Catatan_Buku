@@ -3,6 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { NotFoundException } from '@nestjs/common';
 import { BooksService } from './books.service';
+import { CreateBookDto } from './dto/create-book.dto';
 import { Book } from './entities/book.entity';
 
 describe('BooksService', () => {
@@ -57,9 +58,50 @@ describe('BooksService', () => {
     });
   });
 
+  describe('findOne cache', () => {
+    it('should use a cache key scoped per user', async () => {
+      const book = { id: 'book-1', userId: 'user-1' };
+      mockCacheManager.get.mockResolvedValue(undefined);
+      mockBookRepository.findOne.mockResolvedValue(book);
+
+      await service.findOne('book-1', 'user-1');
+
+      expect(mockCacheManager.set).toHaveBeenCalledWith('book:user-1:book-1', book, 60_000);
+    });
+
+    it('should not serve user A cached book to user B', async () => {
+      mockCacheManager.get.mockImplementation(async (key: string) =>
+        key === 'book:user-1:book-1' ? { id: 'book-1', userId: 'user-1' } : undefined,
+      );
+      mockBookRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.findOne('book-1', 'user-2')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('update and remove', () => {
+    it('should invalidate the per-user cache key on update', async () => {
+      mockBookRepository.findOne.mockResolvedValue({ id: 'book-1', userId: 'user-1' });
+      mockBookRepository.save.mockResolvedValue({ id: 'book-1', userId: 'user-1' });
+
+      await service.update('book-1', { judul: 'Baru' }, 'user-1');
+
+      expect(mockCacheManager.del).toHaveBeenCalledWith('book:user-1:book-1');
+    });
+
+    it('should invalidate the per-user cache key on remove', async () => {
+      mockBookRepository.findOne.mockResolvedValue({ id: 'book-1', userId: 'user-1' });
+      mockBookRepository.remove.mockResolvedValue(undefined);
+
+      await service.remove('book-1', 'user-1');
+
+      expect(mockCacheManager.del).toHaveBeenCalledWith('book:user-1:book-1');
+    });
+  });
+
   describe('create', () => {
     it('should attach userId and save the new book', async () => {
-      const dto = { judul: 'Laskar Pelangi', penulis: 'Andrea Hirata' } as any;
+      const dto: CreateBookDto = { judul: 'Laskar Pelangi', penulis: 'Andrea Hirata' };
       const created = { ...dto, userId: 'user-1' };
       mockBookRepository.create.mockReturnValue(created);
       mockBookRepository.save.mockResolvedValue({ id: 'book-1', ...created });

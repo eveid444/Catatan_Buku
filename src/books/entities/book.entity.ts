@@ -1,7 +1,14 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
-@Entity()
+@Entity('books')
 export class Book {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -12,14 +19,17 @@ export class Book {
   @Column()
   penulis: string;
 
-  @Column()
-  penerbit: string;
+  @Column({ type: 'varchar', nullable: true })
+  penerbit: string | null;
 
-  @Column()
-  tahunTerbit: number;
+  @Column({ type: 'int', nullable: true })
+  tahunTerbit: number | null;
 
-  @Column({ nullable: true, type: 'varchar' })
-  deskripsi: string | null; // sekalian benerin temuan #6, bukan nullable implicit any
+  @Column({ type: 'varchar', nullable: true })
+  deskripsi: string | null;
+
+  @Column({ type: 'text', array: true, default: () => "'{}'" })
+  tags: string[];
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   user: User;

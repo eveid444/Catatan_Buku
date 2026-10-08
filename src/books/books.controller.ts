@@ -11,7 +11,6 @@ import {
   UseInterceptors,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { BooksService } from './books.service';
 import { CreateBookDto } from './dto/create-book.dto';
@@ -20,6 +19,7 @@ import { PaginationDto } from './dto/pagination.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../common/decorator/current-user.decorator';
 import type { AuthenticatedUser } from '../common/decorator/current-user.decorator';
+import { BookQueryDto } from './dto/book-query.dto';
 
 @ApiTags('Books')
 @Controller('books')
@@ -36,14 +36,12 @@ export class BooksController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Get()
-  findAll(@Query() query: PaginationDto, @CurrentUser() user: AuthenticatedUser) {
-    return this.booksService.findAll(query, user.userId);
-  }
+  findAll(@Query() query: BookQueryDto, @CurrentUser() user: AuthenticatedUser) {
+  return this.booksService.findAll(query, user.userId);
+  } 
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @UseInterceptors(CacheInterceptor)      
-  @CacheTTL(60)                            
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.booksService.findOne(id, user.userId);

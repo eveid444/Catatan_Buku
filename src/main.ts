@@ -13,9 +13,11 @@ async function bootstrap() {
   const nodeEnv = configService.get<string>('NODE_ENV') ?? 'development';
   const port = configService.get<number>('PORT') ?? 3000;
 
-  app.enableCors({
-    origin: configService.get<string>('CORS_ORIGIN')?.split(',') ?? '*',
-  });
+  const corsOrigins = (configService.get<string>('CORS_ORIGIN') ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  app.enableCors({ origin: corsOrigins.length > 0 ? corsOrigins : false });
 
   const httpAdapterHost = app.get(HttpAdapterHost);
   app.useGlobalFilters(new GlobalExceptionFilter(httpAdapterHost));

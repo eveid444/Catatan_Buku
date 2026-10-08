@@ -25,7 +25,7 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
         password: config.get<string>('DB_PASSWORD'),
         database: config.get<string>('DB_NAME'),
         autoLoadEntities: true,
-        synchronize:true,
+        synchronize: config.get<string>('NODE_ENV') !== 'production',
       }),
     }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }]),
